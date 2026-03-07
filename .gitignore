@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+credentials.jsoncredentials.json 
+credentials.json 
+credentials.json 
