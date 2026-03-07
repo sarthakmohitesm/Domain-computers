@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-credentials.jsoncredentials.json 
-credentials.json 
-credentials.json 
+# Sensitive files
+.env
+credentials.json
