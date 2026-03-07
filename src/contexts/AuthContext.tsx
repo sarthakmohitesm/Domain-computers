@@ -1,13 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { authAPI } from '@/integrations/api/client';
 import { useNavigate } from 'react-router-dom';
 
 type AppRole = 'admin' | 'staff' | null;
 
+interface User {
+  id: string;
+  email: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
+  session: { user: User | null } | null;
   role: AppRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -18,71 +22,52 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ user: User | null } | null>(null);
   const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching role:', error);
-      return null;
-    }
-
-    return data?.role as AppRole;
-  };
-
   useEffect(() => {
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Check for existing session
+    const token = localStorage.getItem('auth_token');
+    const userId = localStorage.getItem('user_id');
+    const userRole = localStorage.getItem('user_role') as AppRole;
 
-        if (session?.user) {
-          // Defer role fetch to avoid deadlock
-          setTimeout(() => {
-            fetchUserRole(session.user.id).then(setRole);
-          }, 0);
-        } else {
+    if (token && userId) {
+      // Verify token and get user info
+      authAPI.getCurrentUser()
+        .then((data) => {
+          setUser({ id: data.user.id, email: data.user.email });
+          setSession({ user: { id: data.user.id, email: data.user.email } });
+          setRole(data.user.role || userRole);
+          setLoading(false);
+        })
+        .catch(() => {
+          // Token invalid, clear storage
+          authAPI.signOut();
+          setUser(null);
+          setSession(null);
           setRole(null);
-        }
-      }
-    );
-
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        fetchUserRole(session.user.id).then((r) => {
-          setRole(r);
           setLoading(false);
         });
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const data = await authAPI.signIn(email, password);
+      setUser({ id: data.user.id, email: data.user.email });
+      setSession({ user: { id: data.user.id, email: data.user.email } });
+      setRole(data.role);
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    authAPI.signOut();
     setUser(null);
     setSession(null);
     setRole(null);

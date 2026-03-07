@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { tasksAPI, profilesAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,38 +32,25 @@ export const TaskReview = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ['tasks', 'submitted'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('status', 'submitted')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Task[];
+      return await tasksAPI.getByStatus('submitted') as Task[];
     },
   });
 
   const { data: profiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('*');
-      if (error) throw error;
-      return data as Profile[];
+      return await profilesAPI.getAll() as Profile[];
     },
   });
 
   const approveMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ status: 'approved' })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await tasksAPI.update(taskId, { status: 'approved' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -73,14 +61,10 @@ export const TaskReview = () => {
     },
   });
 
+
   const rejectMutation = useMutation({
     mutationFn: async ({ taskId, reason }: { taskId: string; reason: string }) => {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ status: 'rejected', rejection_reason: reason })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await tasksAPI.update(taskId, { status: 'rejected', rejection_reason: reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -178,6 +162,15 @@ export const TaskReview = () => {
                     <XCircle className="w-4 h-4" />
                     Reject
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 ml-auto"
+                    onClick={() => navigate(`/admin/task/${task.id}`)}
+                  >
+                    View Details
+                  </Button>
+
                 </div>
               </div>
             ))}

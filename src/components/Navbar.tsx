@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X, Cpu, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from './ThemeToggle';
 
 const navLinks = [
   { name: 'Services', href: '#services' },
@@ -48,21 +49,25 @@ export const Navbar = () => {
             ))}
           </div>
 
-          {/* Login Button */}
-          <div className="hidden md:block">
+          {/* Right side actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <Button variant="glow" size="lg" onClick={() => navigate('/auth')} className="gap-2">
               <LogIn className="w-4 h-4" />
-              Login
+              Staff Login
             </Button>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-foreground p-2"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button
+              className="text-foreground p-2"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -81,7 +86,7 @@ export const Navbar = () => {
               ))}
               <Button variant="glow" className="mt-2 gap-2" onClick={() => { navigate('/auth'); setIsOpen(false); }}>
                 <LogIn className="w-4 h-4" />
-                Login
+                Staff Login
               </Button>
             </div>
           </div>

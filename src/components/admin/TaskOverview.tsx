@@ -1,9 +1,14 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { tasksAPI, profilesAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Phone, Laptop, MessageSquare } from 'lucide-react';
+import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit } from 'lucide-react';
+import { EditTaskDialog } from './EditTaskDialog';
 
 interface Task {
   id: string;
@@ -11,6 +16,7 @@ interface Task {
   contact_number: string;
   device_name: string;
   problem_reported: string;
+  accessories_received?: string;
   status: string;
   staff_notes: string | null;
   assigned_to: string | null;
@@ -26,33 +32,40 @@ interface Profile {
 const statusColors: Record<string, string> = {
   not_started: 'bg-muted text-muted-foreground',
   working: 'bg-yellow-500/20 text-yellow-500',
+  problem_found: 'bg-orange-500/20 text-orange-500',
   completed: 'bg-blue-500/20 text-blue-500',
   submitted: 'bg-purple-500/20 text-purple-500',
   approved: 'bg-green-500/20 text-green-500',
   rejected: 'bg-destructive/20 text-destructive',
 };
 
+const statusLabels: Record<string, string> = {
+  not_started: 'Pending',
+  working: 'In Progress',
+  problem_found: 'Problem Found',
+  completed: 'Completed',
+  submitted: 'Submitted',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
+
 export const TaskOverview = () => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const { data: tasks, isLoading: loadingTasks } = useQuery({
     queryKey: ['tasks', 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .not('assigned_to', 'is', null)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Task[];
+      return await tasksAPI.getAssigned() as Task[];
     },
   });
 
   const { data: profiles } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('*');
-      if (error) throw error;
-      return data as Profile[];
+      return await profilesAPI.getAll() as Profile[];
     },
   });
 
@@ -62,17 +75,53 @@ export const TaskOverview = () => {
     return profile?.full_name || profile?.email || 'Unknown';
   };
 
+  // Statuses that represent completed/finished work — hide these from overview
+  const completedStatuses = ['completed', 'approved'];
+
+  // Filter out completed tasks, then apply search
+  const filteredTasks = tasks?.filter((task) => {
+    // Exclude completed/approved tasks
+    if (completedStatuses.includes(task.status)) return false;
+
+    // Apply search filter
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      task.customer_name.toLowerCase().includes(q) ||
+      task.device_name.toLowerCase().includes(q) ||
+      task.problem_reported.toLowerCase().includes(q) ||
+      task.contact_number.includes(q) ||
+      getStaffName(task.assigned_to).toLowerCase().includes(q)
+    );
+  }) || [];
+
+  const handleEdit = (task: Task) => {
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <Card className="glass border-border/50">
       <CardHeader>
-        <CardTitle className="font-display text-xl">Task Overview</CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle className="font-display text-xl">Task Overview</CardTitle>
+          <div className="relative w-full sm:w-[300px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-background/50 pl-9"
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {loadingTasks ? (
           <div className="text-center py-8 text-muted-foreground">Loading tasks...</div>
-        ) : !tasks || tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No assigned tasks yet.
+            {searchQuery ? 'No tasks match your search.' : 'No active tasks at the moment.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -84,11 +133,12 @@ export const TaskOverview = () => {
                   <TableHead>Staff</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Notes</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task) => (
-                  <TableRow key={task.id}>
+                {filteredTasks.map((task) => (
+                  <TableRow key={task.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/admin/task/${task.id}`)}>
                     <TableCell>
                       <div>
                         <p className="font-medium">{task.customer_name}</p>
@@ -112,7 +162,7 @@ export const TaskOverview = () => {
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColors[task.status] || ''}>
-                        {task.status.replace('_', ' ')}
+                        {statusLabels[task.status] || task.status.replace('_', ' ')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -127,13 +177,48 @@ export const TaskOverview = () => {
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(task);
+                          }}
+                        >
+                          <Edit className="w-3 h-3" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/task/${task.id}`);
+                          }}
+                        >
+                          <FileText className="w-3 h-3" />
+                          View
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
         )}
+
+        <EditTaskDialog
+          task={editingTask}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
       </CardContent>
     </Card>
   );
 };
+

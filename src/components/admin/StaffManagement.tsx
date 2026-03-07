@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { staffAPI } from '@/integrations/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,52 +28,13 @@ export const StaffManagement = () => {
   const { data: staffMembers, isLoading } = useQuery({
     queryKey: ['staff-members'],
     queryFn: async () => {
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'staff');
-
-      if (rolesError) throw rolesError;
-      if (!roles || roles.length === 0) return [];
-
-      const userIds = roles.map((r) => r.user_id);
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      return profiles as StaffMember[];
+      return await staffAPI.getAll() as StaffMember[];
     },
   });
 
   const createStaffMutation = useMutation({
     mutationFn: async ({ email, password, fullName }: { email: string; password: string; fullName: string }) => {
-      // Sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Failed to create user');
-
-      // Add staff role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: authData.user.id, role: 'staff' });
-
-      if (roleError) throw roleError;
-
-      return authData.user;
+      return await staffAPI.create({ email, password, full_name: fullName });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
@@ -97,12 +58,7 @@ export const StaffManagement = () => {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus }: { id: string; newStatus: 'active' | 'disabled' }) => {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: newStatus })
-        .eq('id', id);
-
-      if (error) throw error;
+      await staffAPI.updateStatus(id, newStatus);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
@@ -115,12 +71,7 @@ export const StaffManagement = () => {
 
   const deleteStaffMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await staffAPI.delete(userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });

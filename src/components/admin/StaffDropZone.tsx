@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { staffAPI, tasksAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useDroppable } from '@dnd-kit/core';
-import { User } from 'lucide-react';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 interface StaffMember {
   id: string;
@@ -18,6 +18,34 @@ interface Task {
   device_name: string;
   status: string;
 }
+
+const DraggableAssignedTask = ({ task }: { task: Task }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { task },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="p-2 rounded bg-card/50 border border-border/30 text-sm cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors"
+    >
+      <p className="font-medium">{task.customer_name}</p>
+      <p className="text-muted-foreground text-xs">{task.device_name}</p>
+      <Badge variant="outline" className="mt-1 text-xs">
+        {task.status.replace('_', ' ')}
+      </Badge>
+    </div>
+  );
+};
 
 const StaffCard = ({ staff, tasks }: { staff: StaffMember; tasks: Task[] }) => {
   const { isOver, setNodeRef } = useDroppable({
@@ -36,21 +64,12 @@ const StaffCard = ({ staff, tasks }: { staff: StaffMember; tasks: Task[] }) => {
           : 'border-border/50 bg-background/50 hover:border-border'
       } ${staff.status === 'disabled' ? 'opacity-50' : ''}`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-          <User className="w-5 h-5 text-primary" />
-        </div>
-        <div className="flex-1">
-          <p className="font-medium">{staff.full_name || 'Unnamed'}</p>
-          <p className="text-xs text-muted-foreground">{staff.email}</p>
-        </div>
-        <Badge variant={staff.status === 'active' ? 'default' : 'secondary'}>
-          {staff.status}
-        </Badge>
+      <div className="mb-3">
+        <p className="font-medium text-base">{staff.full_name || staff.email || 'Unnamed'}</p>
       </div>
 
       {isOver && (
-        <div className="text-center py-4 border-2 border-dashed border-primary rounded-lg text-primary text-sm">
+        <div className="text-center py-4 border-2 border-dashed border-primary rounded-lg text-primary text-sm mb-3">
           Drop task here to assign
         </div>
       )}
@@ -58,16 +77,7 @@ const StaffCard = ({ staff, tasks }: { staff: StaffMember; tasks: Task[] }) => {
       {assignedTasks.length > 0 ? (
         <div className="space-y-2">
           {assignedTasks.map((task) => (
-            <div
-              key={task.id}
-              className="p-2 rounded bg-card/50 border border-border/30 text-sm"
-            >
-              <p className="font-medium">{task.customer_name}</p>
-              <p className="text-muted-foreground text-xs">{task.device_name}</p>
-              <Badge variant="outline" className="mt-1 text-xs">
-                {task.status.replace('_', ' ')}
-              </Badge>
-            </div>
+            <DraggableAssignedTask key={task.id} task={task} />
           ))}
         </div>
       ) : (
@@ -85,42 +95,20 @@ export const StaffDropZone = () => {
   const { data: staffMembers, isLoading: loadingStaff } = useQuery({
     queryKey: ['staff-members'],
     queryFn: async () => {
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'staff');
-
-      if (rolesError) throw rolesError;
-      if (!roles || roles.length === 0) return [];
-
-      const userIds = roles.map((r) => r.user_id);
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      return profiles as StaffMember[];
+      return await staffAPI.getAll() as StaffMember[];
     },
   });
 
   const { data: allTasks } = useQuery({
     queryKey: ['tasks', 'assigned'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .not('assigned_to', 'is', null);
-
-      if (error) throw error;
-      return data as (Task & { assigned_to: string })[];
+      return await tasksAPI.getAssigned() as (Task & { assigned_to: string })[];
     },
   });
 
   const getTasksForStaff = (staffId: string) => {
-    return allTasks?.filter((t) => t.assigned_to === staffId) || [];
+    // Filter out approved tasks - they should not appear in staff cards
+    return allTasks?.filter((t) => t.assigned_to === staffId && t.status !== 'approved') || [];
   };
 
   return (
