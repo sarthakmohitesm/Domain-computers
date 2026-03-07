@@ -3,6 +3,7 @@ import { Task } from '../models/Task.js';
 import { Profile } from '../models/Profile.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { appendTaskToSheet } from '../config/googleSheets.js';
+import { exportTasksToExcel } from '../config/excelExport.js';
 
 const router = express.Router();
 
@@ -226,6 +227,64 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
     res.json({ message: 'Task archived to Google Sheet and deleted successfully' });
   } catch (error) {
     console.error('Delete task error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export tasks to Excel
+router.get('/export/excel', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { status, assigned_to } = req.query;
+    let query = {};
+
+    if (status) {
+      query.status = status;
+    }
+    if (assigned_to) {
+      query.assigned_to = assigned_to === 'null' ? null : assigned_to;
+    }
+
+    const tasks = await Task.find(query);
+    
+    if (tasks.length === 0) {
+      return res.status(400).json({ error: 'No tasks found to export' });
+    }
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `tasks_${timestamp}.xlsx`;
+
+    const result = exportTasksToExcel(tasks, filename);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: result.message,
+        filename: result.filename,
+        downloadUrl: `/api/tasks/download/${filename}`,
+      });
+    } else {
+      res.status(500).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error('Export tasks to Excel error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Download exported Excel file
+router.get('/download/:filename', authenticateToken, requireRole(['admin']), (req, res) => {
+  try {
+    const path = require('path');
+    const filePath = path.join(process.cwd(), 'exports', req.params.filename);
+    
+    if (!require('fs').existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    res.download(filePath, req.params.filename);
+  } catch (error) {
+    console.error('Download file error:', error);
     res.status(500).json({ error: error.message });
   }
 });
