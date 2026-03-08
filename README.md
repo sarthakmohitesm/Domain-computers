@@ -406,7 +406,7 @@ This project is **proprietary software**. Unauthorized copying or distribution i
 
 ### 🎉 Thanks for checking out Domain Computers!
 
-<img src="https://img.shields.io/badge/Made%20with-❤️-ff69b4?style=for-the-badge" alt="Made with love"/>
+<!-- <img src="https://img.shields.io/badge/Made%20with-❤️-ff69b4?style=for-the-badge" alt="Made with love"/> -->
 
 **Questions or suggestions?** Feel free to open an issue! 
 
