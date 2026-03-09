@@ -7,6 +7,10 @@ type AppRole = 'admin' | 'staff' | null;
 interface User {
   id: string;
   email: string;
+  profile?: {
+    avatar_url?: string;
+    full_name?: string;
+  };
 }
 
 interface AuthContextType {
@@ -36,8 +40,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Verify token and get user info
       authAPI.getCurrentUser()
         .then((data) => {
-          setUser({ id: data.user.id, email: data.user.email });
-          setSession({ user: { id: data.user.id, email: data.user.email } });
+          setUser({ id: data.user.id, email: data.user.email, profile: data.user.profile });
+          setSession({ user: { id: data.user.id, email: data.user.email, profile: data.user.profile } });
           setRole(data.user.role || userRole);
           setLoading(false);
         })

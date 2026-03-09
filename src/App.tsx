@@ -13,6 +13,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import JobSheet from "./pages/JobSheet";
 import AdminJobSheet from "./pages/AdminJobSheet";
 import StaffSettings from "./pages/StaffSettings";
+import AdminStaffProfile from "./pages/AdminStaffProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/task/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminJobSheet /></ProtectedRoute>} />
+              <Route path="/admin/staff/:id" element={<ProtectedRoute allowedRoles={['admin']}><AdminStaffProfile /></ProtectedRoute>} />
               <Route path="/staff" element={<ProtectedRoute allowedRoles={['staff']}><StaffDashboard /></ProtectedRoute>} />
               <Route path="/staff/task/:id" element={<ProtectedRoute allowedRoles={['staff']}><JobSheet /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'staff']}><StaffSettings /></ProtectedRoute>} />

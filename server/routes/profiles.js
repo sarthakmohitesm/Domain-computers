@@ -29,5 +29,29 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Update profile
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { avatar_url } = req.body;
+
+    // Only allow updating own profile or if admin
+    if (req.user.userId !== req.params.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized to update this profile' });
+    }
+
+    const updates = {};
+    if (avatar_url !== undefined) {
+      updates.avatar_url = avatar_url;
+    }
+
+    await Profile.update(req.params.id, updates);
+    const updatedProfile = await Profile.findById(req.params.id);
+    res.json(updatedProfile);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
 

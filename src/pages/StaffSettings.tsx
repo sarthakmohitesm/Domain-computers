@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cpu, ArrowLeft, Lock, User, Mail } from 'lucide-react';
+import { Cpu, ArrowLeft, Lock, User, Mail, Upload, Camera, Trash2 } from 'lucide-react';
+import { profilesAPI } from '@/integrations/api/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const StaffSettings = () => {
     const navigate = useNavigate();
@@ -17,6 +19,54 @@ const StaffSettings = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const queryClient = useQueryClient();
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: 'Error', description: 'Image must be less than 5MB', variant: 'destructive' });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64String = reader.result as string;
+            setIsUploading(true);
+            try {
+                if (user?.id) {
+                    await profilesAPI.update(user.id, { avatar_url: base64String });
+                    toast({ title: 'Success', description: 'Profile picture updated successfully.' });
+                    queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+                    // To instantly update the avatar we can reload or wait for contextual updates.
+                    window.location.reload();
+                }
+            } catch (error: any) {
+                toast({ title: 'Error', description: error.message || 'Failed to update profile picture', variant: 'destructive' });
+            } finally {
+                setIsUploading(false);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleDeleteImage = async () => {
+        setIsUploading(true);
+        try {
+            if (user?.id) {
+                await profilesAPI.update(user.id, { avatar_url: '' });
+                toast({ title: 'Success', description: 'Profile picture removed successfully.' });
+                queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+                window.location.reload();
+            }
+        } catch (error: any) {
+            toast({ title: 'Error', description: error.message || 'Failed to remove profile picture', variant: 'destructive' });
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,17 +134,53 @@ const StaffSettings = () => {
                                 Profile Information
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <label className="text-xs text-muted-foreground uppercase tracking-wider">Email</label>
-                                <p className="flex items-center gap-2 mt-1">
-                                    <Mail className="w-4 h-4 text-primary" />
-                                    {user?.email || 'Unknown'}
-                                </p>
-                            </div>
-                            <div>
-                                <label className="text-xs text-muted-foreground uppercase tracking-wider">Role</label>
-                                <p className="mt-1 capitalize font-medium">{role || 'Unknown'}</p>
+                        <CardContent className="space-y-6">
+                            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                                <div className="relative inline-block">
+                                    <div className="relative group">
+                                        <div className="w-24 h-24 rounded-full bg-muted border-4 border-background flex items-center justify-center overflow-hidden shadow-md">
+                                            {user?.profile?.avatar_url ? (
+                                                <img src={user.profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User className="w-10 h-10 text-muted-foreground" />
+                                            )}
+                                        </div>
+                                        <label htmlFor="avatar-upload" className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
+                                            <Camera className="w-6 h-6" />
+                                        </label>
+                                        <input
+                                            id="avatar-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploading}
+                                        />
+                                    </div>
+                                    {user?.profile?.avatar_url && (
+                                        <button
+                                            onClick={handleDeleteImage}
+                                            disabled={isUploading}
+                                            className="absolute -top-1 -right-1 p-1.5 bg-destructive text-destructive-foreground rounded-full shadow-md hover:bg-destructive/90 transition-transform active:scale-95"
+                                            title="Remove profile picture"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-4 text-center sm:text-left">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground uppercase tracking-wider">Email</label>
+                                        <p className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                                            <Mail className="w-4 h-4 text-primary" />
+                                            {user?.email || 'Unknown'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground uppercase tracking-wider">Role</label>
+                                        <p className="mt-1 capitalize font-medium">{role || 'Unknown'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

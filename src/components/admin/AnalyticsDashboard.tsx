@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tasksAPI, profilesAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Users, ClipboardList } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, CheckCircle, XCircle, Users, ClipboardList, Trophy, Flame } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -10,6 +10,7 @@ interface Task {
   assigned_to: string | null;
   created_at: string;
   updated_at: string;
+  completed_at?: string;
 }
 
 interface Profile {
@@ -79,14 +80,62 @@ export const AnalyticsDashboard = () => {
     const staffTasks = tasks.filter(t => t.assigned_to === profile.id);
     const completed = staffTasks.filter(t => t.status === 'approved').length;
     const total = staffTasks.length;
+
+    // Calculate streak
+    const activeDates = new Set<string>();
+    staffTasks.forEach(t => {
+      if (t.created_at) activeDates.add(new Date(t.created_at).toISOString().split('T')[0]);
+      if (t.updated_at) activeDates.add(new Date(t.updated_at).toISOString().split('T')[0]);
+      if (t.completed_at) activeDates.add(new Date(t.completed_at).toISOString().split('T')[0]);
+    });
+
+    const sortedDates = Array.from(activeDates).sort((a, b) => b.localeCompare(a));
+    let streak = 0;
+
+    if (sortedDates.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = yesterdayDate.toISOString().split('T')[0];
+
+      if (sortedDates[0] === today || sortedDates[0] === yesterday) {
+        streak = 1;
+        let currentDate = new Date(sortedDates[0]);
+
+        for (let i = 1; i < sortedDates.length; i++) {
+          const prevDate = new Date(currentDate);
+          prevDate.setDate(prevDate.getDate() - 1);
+          const expectedDateStr = prevDate.toISOString().split('T')[0];
+
+          if (sortedDates[i] === expectedDateStr) {
+            streak++;
+            currentDate = prevDate;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
     return {
       name: profile.full_name || profile.email,
       total,
       completed,
       pending: total - completed,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      streak
     };
   }).filter(s => s.total > 0) || [];
+
+  const rankedStaffPerformance = [...staffPerformance].sort((a, b) => {
+    if (b.completed !== a.completed) {
+      return b.completed - a.completed;
+    }
+    return b.streak - a.streak;
+  }).map((staff, index) => ({
+    ...staff,
+    rank: index + 1
+  }));
 
   // Tasks over time (last 7 days)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -229,12 +278,12 @@ export const AnalyticsDashboard = () => {
 
         <Card className="glass border-border/50">
           <CardHeader>
-            <CardTitle className="font-display text-xl">Staff Performance</CardTitle>
+            <CardTitle className="font-display text-xl">Staff Performance Ranking</CardTitle>
           </CardHeader>
           <CardContent>
-            {staffPerformance.length > 0 ? (
+            {rankedStaffPerformance.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={staffPerformance} layout="vertical">
+                <BarChart data={rankedStaffPerformance} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="name" type="category" width={100} />
@@ -254,12 +303,12 @@ export const AnalyticsDashboard = () => {
       </div>
 
       {/* Staff Performance Table */}
-      {staffPerformance.length > 0 && (
+      {rankedStaffPerformance.length > 0 && (
         <Card className="glass border-border/50">
           <CardHeader>
             <CardTitle className="font-display text-xl flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Staff Performance Details
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              Staff Leaderboard
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -267,7 +316,9 @@ export const AnalyticsDashboard = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50">
+                    <th className="text-left p-3 w-16">Rank</th>
                     <th className="text-left p-3">Staff Member</th>
+                    <th className="text-center p-3">Streak</th>
                     <th className="text-center p-3">Total Tasks</th>
                     <th className="text-center p-3">Completed</th>
                     <th className="text-center p-3">Pending</th>
@@ -275,11 +326,22 @@ export const AnalyticsDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffPerformance.map((staff, index) => (
-                    <tr key={index} className="border-b border-border/30">
+                  {rankedStaffPerformance.map((staff) => (
+                    <tr key={staff.name} className="border-b border-border/30 hover:bg-muted/50 transition-colors">
+                      <td className="p-3 font-bold text-lg">
+                        {staff.rank === 1 ? <span className="text-yellow-500" title="1st Place">🥇 1</span> :
+                          staff.rank === 2 ? <span className="text-gray-400" title="2nd Place">🥈 2</span> :
+                            staff.rank === 3 ? <span className="text-amber-600" title="3rd Place">🥉 3</span> :
+                              <span className="text-muted-foreground">#{staff.rank}</span>}
+                      </td>
                       <td className="p-3 font-medium">{staff.name}</td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 font-bold text-orange-500 bg-orange-500/10 px-2 py-1 rounded-full w-fit mx-auto">
+                          <Flame className="w-4 h-4" /> {staff.streak}
+                        </div>
+                      </td>
                       <td className="p-3 text-center">{staff.total}</td>
-                      <td className="p-3 text-center text-green-500">{staff.completed}</td>
+                      <td className="p-3 text-center text-green-500 font-bold">{staff.completed}</td>
                       <td className="p-3 text-center text-yellow-500">{staff.pending}</td>
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center gap-2">

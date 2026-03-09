@@ -180,4 +180,11 @@ export const profilesAPI = {
   getById: async (id: string) => {
     return apiRequest(`/profiles/${id}`);
   },
+
+  update: async (id: string, updates: { avatar_url?: string }) => {
+    return apiRequest(`/profiles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
 };

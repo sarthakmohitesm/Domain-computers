@@ -84,7 +84,11 @@ const StaffDashboard = () => {
       <header className="glass sticky top-0 z-50 border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Cpu className="w-8 h-8 text-primary" />
+            {user?.profile?.avatar_url ? (
+              <img src={user.profile.avatar_url} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-primary/20" />
+            ) : (
+              <Cpu className="w-8 h-8 text-primary" />
+            )}
             <span className="font-display font-bold text-lg">Employee Dashboard</span>
           </div>
           <div className="flex items-center gap-2">

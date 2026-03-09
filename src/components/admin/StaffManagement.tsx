@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { staffAPI } from '@/integrations/api/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export const StaffManagement = () => {
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPassword, setNewStaffPassword] = useState('');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const { data: staffMembers, isLoading } = useQuery({
@@ -183,6 +185,7 @@ export const StaffManagement = () => {
                         newStatus: staff.status === 'active' ? 'disabled' : 'active',
                       })
                     }
+                    title={staff.status === 'active' ? "Disable Staff" : "Activate Staff"}
                   >
                     {staff.status === 'active' ? (
                       <ToggleRight className="w-4 h-4 text-primary" />
@@ -192,8 +195,17 @@ export const StaffManagement = () => {
                   </Button>
                   <Button
                     variant="ghost"
+                    size="sm"
+                    className="gap-1 hidden sm:flex"
+                    onClick={() => navigate(`/admin/staff/${staff.id}`)}
+                  >
+                    View Dashboard
+                  </Button>
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => deleteStaffMutation.mutate(staff.id)}
+                    title="Remove Staff"
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
