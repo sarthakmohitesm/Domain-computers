@@ -7,6 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface Task {
   id: string;
@@ -17,6 +22,7 @@ interface Task {
   problem_reported: string;
   status: string;
   assigned_to?: string | null;
+  deadline?: string;
 }
 
 interface EditTaskDialogProps {
@@ -31,6 +37,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
   const [deviceName, setDeviceName] = useState('');
   const [accessoriesReceived, setAccessoriesReceived] = useState('');
   const [problemReported, setProblemReported] = useState('');
+  const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -41,6 +48,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
       setDeviceName(task.device_name);
       setAccessoriesReceived(task.accessories_received || '');
       setProblemReported(task.problem_reported);
+      setDeadline(task.deadline ? new Date(task.deadline) : undefined);
     }
   }, [task]);
 
@@ -53,6 +61,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
         device_name: deviceName,
         accessories_received: accessoriesReceived,
         problem_reported: problemReported,
+        deadline: deadline ? deadline.toISOString() : undefined,
       });
     },
     onSuccess: () => {
@@ -164,6 +173,32 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
               placeholder="Describe the issue..."
               className="bg-background/50 min-h-[100px]"
             />
+          </div>
+          <div className="space-y-2 flex flex-col">
+            <Label htmlFor="edit-deadline">Task Deadline (Date) - Optional</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="edit-deadline"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-background/50",
+                    !deadline && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deadline ? format(deadline, "PPP") : <span>Pick a deadline date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={deadline}
+                  onSelect={setDeadline}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

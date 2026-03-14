@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit } from 'lucide-react';
+import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit, Clock } from 'lucide-react';
 import { EditTaskDialog } from './EditTaskDialog';
 
 interface Task {
@@ -20,6 +20,7 @@ interface Task {
   status: string;
   staff_notes: string | null;
   assigned_to: string | null;
+  deadline?: string;
   created_at: string;
 }
 
@@ -132,13 +133,22 @@ export const TaskOverview = () => {
                   <TableHead>Device</TableHead>
                   <TableHead>Staff</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Deadline</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTasks.map((task) => (
-                  <TableRow key={task.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/admin/task/${task.id}`)}>
+                {filteredTasks.map((task) => {
+                  const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+                  const isOverdue = deadlineDate && deadlineDate < new Date() && !['completed', 'submitted', 'approved'].includes(task.status);
+
+                  return (
+                  <TableRow 
+                    key={task.id} 
+                    className={`cursor-pointer transition-all hover:bg-muted/30 ${isOverdue ? 'bg-destructive/10 hover:bg-destructive/20' : ''}`} 
+                    onClick={() => navigate(`/admin/task/${task.id}`)}
+                  >
                     <TableCell>
                       <div>
                         <p className="font-medium">{task.customer_name}</p>
@@ -164,6 +174,18 @@ export const TaskOverview = () => {
                       <Badge className={statusColors[task.status] || ''}>
                         {statusLabels[task.status] || task.status.replace('_', ' ')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {task.deadline ? (
+                        <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md w-fit ${
+                          isOverdue ? 'bg-destructive text-destructive-foreground' : 'bg-primary/10 text-primary'
+                        }`}>
+                          <Clock className="w-3 h-3" />
+                          {new Date(task.deadline).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {task.staff_notes ? (
@@ -206,7 +228,7 @@ export const TaskOverview = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
           </div>

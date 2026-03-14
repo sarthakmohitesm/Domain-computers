@@ -116,6 +116,7 @@ export const tasksAPI = {
     device_name: string;
     accessories_received?: string;
     problem_reported: string;
+    deadline?: string;
   }) => {
     return apiRequest('/tasks', {
       method: 'POST',

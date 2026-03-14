@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Cpu, LogOut, Phone, Laptop, AlertCircle, Send, FileText,
-  Settings, Clock, CheckCircle, Package, Wrench
+  Settings, Clock, CheckCircle, Package, Wrench, Calendar
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -32,6 +32,16 @@ const statusLabels: Record<string, string> = {
   submitted: 'Submitted',
   rejected: 'Rejected',
   approved: 'Approved',
+};
+
+const getDaysAgo = (dateStr: string): string => {
+  const assigned = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - assigned.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
 };
 
 const StaffDashboard = () => {
@@ -154,8 +164,17 @@ const StaffDashboard = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredTasks.map((task: any) => (
-              <Card key={task.id} className="glass border-border/50 hover:border-primary/30 transition-all">
+            {filteredTasks.map((task: any) => {
+              const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+              const isOverdue = deadlineDate && deadlineDate < new Date() && !['completed', 'submitted', 'approved'].includes(task.status);
+              
+              return (
+                <Card 
+                  key={task.id} 
+                  className={`glass border-border/50 hover:border-primary/30 transition-all ${
+                    isOverdue ? 'bg-destructive/10 border-destructive/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : ''
+                  }`}
+                >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
@@ -169,9 +188,25 @@ const StaffDashboard = () => {
                         </span>
                       </div>
                     </div>
-                    <Badge className={statusColors[task.status]}>
-                      {statusLabels[task.status] || task.status.replace('_', ' ')}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Badge className={statusColors[task.status]}>
+                        {statusLabels[task.status] || task.status.replace('_', ' ')}
+                      </Badge>
+                      {task.created_at && (
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">
+                          <Calendar className="w-3 h-3" />
+                          {getDaysAgo(task.created_at)}
+                        </span>
+                      )}
+                      {task.deadline && (
+                        <span className={`flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 ${
+                          isOverdue ? 'bg-destructive text-destructive-foreground font-bold' : 'bg-primary/10 text-primary'
+                        }`}>
+                          <Clock className="w-3 h-3" />
+                          DL: {new Date(task.deadline).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -237,7 +272,7 @@ const StaffDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )})}
           </div>
         )}
       </main>

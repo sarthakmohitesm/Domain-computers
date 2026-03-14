@@ -17,12 +17,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increased limit to support base64 image uploads
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Connect to MongoDB
-connectDB().catch((err) => {
-  console.error('Failed to connect to MongoDB:', err);
-  process.exit(1);
-});
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -34,7 +28,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Connect to MongoDB and start server
+const startServer = async () => {
+  try {
+    await connectDB();
+    console.log('MongoDB connected successfully');
+    
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err);
+    process.exit(1);
+  }
+};
+
+startServer();
 

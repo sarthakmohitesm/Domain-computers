@@ -17,6 +17,7 @@ export class Task {
     this.created_by = data.created_by || null;
     this.completed_at = data.completed_at || null;
     this.delivery_date = data.delivery_date || null;
+    this.deadline = data.deadline || null;
     this.created_at = data.created_at || new Date();
     this.updated_at = data.updated_at || new Date();
   }
@@ -38,6 +39,7 @@ export class Task {
       created_by: data.created_by || null,
       completed_at: null,
       delivery_date: null,
+      deadline: data.deadline || null,
       created_at: new Date(),
       updated_at: new Date(),
     };

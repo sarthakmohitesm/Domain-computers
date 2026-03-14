@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Cpu, ArrowLeft, Phone, Laptop, Package, AlertCircle,
   Send, MessageSquare, Clock, CheckCircle, XCircle, FileText,
-  Wrench, User
+  Wrench, User, Printer
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -108,6 +108,10 @@ const AdminJobSheet = () => {
     return profile?.full_name || profile?.email || 'Unknown';
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -138,9 +142,14 @@ const AdminJobSheet = () => {
             <FileText className="w-6 h-6 text-primary" />
             <span className="font-display font-bold text-lg">Job Sheet (Admin View)</span>
           </div>
-          <Badge className={statusColors[task.status]}>
-            {statusLabels[task.status] || task.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 hidden sm:flex">
+              <Printer className="w-4 h-4" /> Print Sheet
+            </Button>
+            <Badge className={statusColors[task.status]}>
+              {statusLabels[task.status] || task.status}
+            </Badge>
+          </div>
         </div>
       </header>
 
@@ -390,6 +399,91 @@ const AdminJobSheet = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Print-only Job Sheet Styles */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-jobsheet, #printable-jobsheet * {
+            visibility: visible;
+          }
+          #printable-jobsheet {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 40px;
+            color: black !important;
+            background: white !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Minimalistic Printable Job Sheet */}
+      <div id="printable-jobsheet" className="hidden print:block">
+        <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-bold uppercase">Job Repair Sheet</h1>
+            <p className="text-sm">ID: {task.id}</p>
+          </div>
+          <div className="text-right">
+            <p className="font-bold">STATUS: {statusLabels[task.status]?.toUpperCase()}</p>
+            <p className="text-sm">Date: {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          <div>
+            <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Customer details</h2>
+            <div className="space-y-1">
+              <p><strong>Name:</strong> {task.customer_name}</p>
+              <p><strong>Contact:</strong> {task.contact_number}</p>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Employee details</h2>
+            <div className="space-y-1">
+              <p><strong>Assigned To:</strong> {getStaffName(task.assigned_to)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-lg font-bold border-b border-black mb-2 uppercase">Device & problem details</h2>
+          <div className="space-y-2">
+            <p><strong>Device:</strong> {task.device_name}</p>
+            <p><strong>Accessories:</strong> {task.accessories_received || 'None'}</p>
+            <div className="mt-4 p-4 border border-black min-h-[100px]">
+              <p className="text-sm font-bold mb-1 underline">Problem Reported:</p>
+              <p>{task.problem_reported}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 mb-8">
+            <div className="p-4 border border-black min-h-[150px]">
+                <p className="text-sm font-bold mb-1 underline">Technician Notes:</p>
+                <p className="text-sm whitespace-pre-wrap">{task.staff_notes || ''}</p>
+            </div>
+            <div className="p-4 border border-black min-h-[150px] flex flex-col justify-between">
+                <div>
+                   <p className="text-sm font-bold mb-1 underline">Customer Signature:</p>
+                </div>
+                <div className="border-t border-black pt-2 text-center text-[10px]">
+                    I verify that the above information is correct.
+                </div>
+            </div>
+        </div>
+
+        <div className="text-center text-[10px] text-gray-500 mt-20 border-t pt-2">
+           Generated from Digital Haven Management System
+        </div>
+      </div>
     </div>
   );
 };

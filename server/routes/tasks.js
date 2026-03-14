@@ -104,7 +104,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create task
 router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
-    const { customer_name, contact_number, device_name, accessories_received, problem_reported } = req.body;
+    const { customer_name, contact_number, device_name, accessories_received, problem_reported, deadline } = req.body;
 
     if (!customer_name || !contact_number || !device_name || !problem_reported) {
       return res.status(400).json({ error: 'All required fields must be filled' });
@@ -116,6 +116,7 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => 
       device_name,
       accessories_received: accessories_received || '',
       problem_reported,
+      deadline,
       created_by: req.user.userId,
       status: 'not_started',
     });

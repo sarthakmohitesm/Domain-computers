@@ -8,7 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Package } from 'lucide-react';
+import { Plus, Package, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export const TaskCreation = () => {
   const [customerName, setCustomerName] = useState('');
@@ -16,6 +20,7 @@ export const TaskCreation = () => {
   const [deviceName, setDeviceName] = useState('');
   const [accessoriesReceived, setAccessoriesReceived] = useState('');
   const [problemReported, setProblemReported] = useState('');
+  const [deadline, setDeadline] = useState<Date>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -28,6 +33,7 @@ export const TaskCreation = () => {
         device_name: deviceName,
         accessories_received: accessoriesReceived,
         problem_reported: problemReported,
+        deadline: deadline ? deadline.toISOString() : undefined,
       });
     },
     onSuccess: () => {
@@ -37,6 +43,7 @@ export const TaskCreation = () => {
       setDeviceName('');
       setAccessoriesReceived('');
       setProblemReported('');
+      setDeadline(undefined);
       toast({
         title: 'Task Created',
         description: 'New repair task has been added to the bucket.',
@@ -123,6 +130,32 @@ export const TaskCreation = () => {
               placeholder="Describe the issue in detail..."
               className="bg-background/50 min-h-[100px]"
             />
+          </div>
+          <div className="space-y-2 flex flex-col">
+            <Label htmlFor="deadline">Task Deadline (Date) - Optional</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="deadline"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal bg-background/50",
+                    !deadline && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deadline ? format(deadline, "PPP") : <span>Pick a deadline date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={deadline}
+                  onSelect={setDeadline}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <Button
             type="submit"

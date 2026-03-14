@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Phone, Laptop, User, Calendar, Search, FileText, Download, Trash2 } from 'lucide-react';
+import { CheckCircle, Phone, Laptop, User, Calendar, Search, FileText, Download, Trash2, Clock } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -79,6 +79,20 @@ export const ApprovedTasks = () => {
     return profile?.full_name || profile?.email || 'Unknown';
   };
 
+  // Calculate days taken to complete
+  const calculateDaysTaken = (assignedDate: string, completedDate: string | null, updatedDate: string) => {
+    const start = new Date(assignedDate);
+    const end = completedDate ? new Date(completedDate) : new Date(updatedDate);
+    // Ignore time for accurate day count
+    const startObj = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endObj = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const diffMs = endObj.getTime() - startObj.getTime();
+    const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    if (diffDays === 0) return 'Same day';
+    if (diffDays === 1) return '1 day';
+    return `${diffDays} days`;
+  };
+
   // Filter completed tasks
   const filteredTasks = tasks?.filter((task) => {
     if (!searchQuery) return true;
@@ -95,7 +109,7 @@ export const ApprovedTasks = () => {
   // Export to CSV
   const exportToCSV = () => {
     if (!filteredTasks.length) return;
-    const headers = ['Customer Name', 'Phone', 'Device Type', 'Problem', 'Assigned To', 'Status', 'Completion Date'];
+    const headers = ['Customer Name', 'Phone', 'Device Type', 'Problem', 'Assigned To', 'Status', 'Assigned Date', 'Completion Date', 'Days to Complete'];
     const rows = filteredTasks.map(task => [
       task.customer_name,
       task.contact_number,
@@ -103,7 +117,9 @@ export const ApprovedTasks = () => {
       `"${task.problem_reported.replace(/"/g, '""')}"`,
       getStaffName(task.assigned_to),
       'Completed',
+      new Date(task.created_at).toLocaleDateString(),
       task.completed_at ? new Date(task.completed_at).toLocaleDateString() : new Date(task.updated_at).toLocaleDateString(),
+      calculateDaysTaken(task.created_at, task.completed_at, task.updated_at)
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -169,6 +185,7 @@ export const ApprovedTasks = () => {
                   <TableHead>Problem Description</TableHead>
                   <TableHead>Assigned Employee</TableHead>
                   <TableHead>Task Status</TableHead>
+                  <TableHead>Assigned Date</TableHead>
                   <TableHead>Completion Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -208,9 +225,21 @@ export const ApprovedTasks = () => {
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4" />
-                        {task.completed_at
-                          ? new Date(task.completed_at).toLocaleDateString()
-                          : new Date(task.updated_at).toLocaleDateString()}
+                        {new Date(task.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          {task.completed_at
+                            ? new Date(task.completed_at).toLocaleDateString()
+                            : new Date(task.updated_at).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded w-fit px-1.5 py-0.5">
+                          <Clock className="w-3 h-3" />
+                          {calculateDaysTaken(task.created_at, task.completed_at, task.updated_at)}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
