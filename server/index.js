@@ -17,6 +17,16 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increased limit to support base64 image uploads
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Ensure DB is connected for every request (Serverless Guard)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
