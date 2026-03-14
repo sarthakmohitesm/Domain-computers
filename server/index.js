@@ -34,8 +34,18 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/profiles', profileRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    res.json({ status: 'OK', message: 'Server and Database are connected' });
+  } catch (err) {
+    res.status(500).json({ 
+      status: 'Error', 
+      message: 'Database connection failed', 
+      details: err.message,
+      env_uri_exists: !!process.env.MONGODB_URI
+    });
+  }
 });
 
 // Connect to MongoDB and start server
