@@ -14,6 +14,7 @@ export const connectDB = async () => {
   }
 
   const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/domain-digital-haven';
+  console.log('Connecting to MongoDB...', uri.replace(/:([^@]+)@/, ':****@'));
   
   connectionPromise = (async () => {
     try {
