@@ -1,16 +1,16 @@
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/domain-digital-haven';
 let client = null;
 let db = null;
 
 export const connectDB = async () => {
+  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/domain-digital-haven';
   try {
     if (client && db) {
       return { client, db };
     }
 
-    client = new MongoClient(MONGODB_URI);
+    client = new MongoClient(uri);
     await client.connect();
     db = client.db();
     

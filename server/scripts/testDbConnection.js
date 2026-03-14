@@ -2,10 +2,12 @@ import dotenv from 'dotenv';
 import { connectDB } from '../config/db.js';
 
 // Load server .env if present
-dotenv.config({ path: './server/.env' });
+dotenv.config();
 
 (async () => {
   try {
+    const uri = process.env.MONGODB_URI;
+    console.log('Attempting to connect to:', uri ? uri.replace(/:([^@]+)@/, ':****@') : 'undefined');
     const { client } = await connectDB();
     console.log('Test: MongoDB connection successful');
     await client.close();

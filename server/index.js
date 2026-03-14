@@ -32,16 +32,19 @@ app.get('/api/health', (req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
-    console.log('MongoDB connected successfully');
     
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    if (!process.env.VERCEL) {
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    }
   } catch (err) {
     console.error('Failed to connect to MongoDB:', err);
-    process.exit(1);
+    if (!process.env.VERCEL) process.exit(1);
   }
 };
 
 startServer();
+
+export default app;
 
