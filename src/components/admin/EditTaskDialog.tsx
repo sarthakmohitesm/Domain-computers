@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 
 interface Task {
   id: string;
+  task_id: string;
   customer_name: string;
   contact_number: string;
   device_name: string;
@@ -113,7 +114,10 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display">Edit Task</DialogTitle>
+          <div className="flex flex-col">
+            <DialogTitle className="font-display">Edit Task</DialogTitle>
+            <span className="text-[11px] font-mono font-bold text-primary mt-1">{task.task_id || 'N/A'}</span>
+          </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

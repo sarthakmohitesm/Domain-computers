@@ -12,6 +12,7 @@ import { EditTaskDialog } from './EditTaskDialog';
 
 interface Task {
   id: string;
+  task_id: string;
   customer_name: string;
   contact_number: string;
   device_name: string;
@@ -39,9 +40,12 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
       className="p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/50 transition-colors"
     >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium cursor-grab active:cursor-grabbing" {...listeners} {...attributes}>
-          {task.customer_name}
-        </h4>
+        <div className="flex flex-col cursor-grab active:cursor-grabbing" {...listeners} {...attributes}>
+          <span className="text-[10px] font-mono font-bold text-primary mb-0.5">{task.task_id || 'N/A'}</span>
+          <h4 className="font-medium">
+            {task.customer_name}
+          </h4>
+        </div>
         <div className="flex gap-1">
           <Button
             variant="ghost"

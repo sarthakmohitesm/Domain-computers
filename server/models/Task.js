@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 
 export class Task {
   constructor(data) {
+    this.task_id = data.task_id || null;
     this.customer_name = data.customer_name;
     this.contact_number = data.contact_number;
     this.device_name = data.device_name;
@@ -22,9 +23,22 @@ export class Task {
     this.updated_at = data.updated_at || new Date();
   }
 
+  static async getNextTaskId() {
+    const db = getDB();
+    const result = await db.collection('counters').findOneAndUpdate(
+      { _id: 'task_id' },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    const seq = result.value ? result.value.seq : result.seq;
+    return `D${seq.toString().padStart(4, '0')}`;
+  }
+
   static async create(data) {
     const db = getDB();
+    const taskId = await this.getNextTaskId();
     const task = {
+      task_id: taskId,
       customer_name: data.customer_name,
       contact_number: data.contact_number,
       device_name: data.device_name,

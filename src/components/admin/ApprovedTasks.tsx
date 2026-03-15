@@ -13,6 +13,7 @@ import { CheckCircle, Phone, Laptop, User, Calendar, Search, FileText, Download,
 
 interface Task {
   id: string;
+  task_id: string;
   customer_name: string;
   contact_number: string;
   device_name: string;
@@ -98,6 +99,7 @@ export const ApprovedTasks = () => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
+      (task.task_id && task.task_id.toLowerCase().includes(q)) ||
       task.customer_name.toLowerCase().includes(q) ||
       task.device_name.toLowerCase().includes(q) ||
       task.problem_reported.toLowerCase().includes(q) ||
@@ -109,8 +111,9 @@ export const ApprovedTasks = () => {
   // Export to CSV
   const exportToCSV = () => {
     if (!filteredTasks.length) return;
-    const headers = ['Customer Name', 'Phone', 'Device Type', 'Problem', 'Assigned To', 'Status', 'Assigned Date', 'Completion Date', 'Days to Complete'];
+    const headers = ['Task ID', 'Customer Name', 'Phone', 'Device Type', 'Problem', 'Assigned To', 'Status', 'Assigned Date', 'Completion Date', 'Days to Complete'];
     const rows = filteredTasks.map(task => [
+      task.task_id || 'N/A',
       task.customer_name,
       task.contact_number,
       task.device_name,
@@ -180,6 +183,7 @@ export const ApprovedTasks = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Task ID</TableHead>
                   <TableHead>Customer Name</TableHead>
                   <TableHead>Device Type</TableHead>
                   <TableHead>Problem Description</TableHead>
@@ -193,6 +197,9 @@ export const ApprovedTasks = () => {
               <TableBody>
                 {filteredTasks.map((task) => (
                   <TableRow key={task.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/admin/task/${task.id}`)}>
+                    <TableCell className="font-mono text-xs font-bold text-primary">
+                      {task.task_id || 'N/A'}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{task.customer_name}</p>

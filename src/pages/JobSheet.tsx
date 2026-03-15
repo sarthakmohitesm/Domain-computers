@@ -139,7 +139,10 @@ const JobSheet = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <FileText className="w-6 h-6 text-primary" />
-            <span className="font-display font-bold text-lg">Job Sheet</span>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg leading-none">Job Sheet</span>
+              <span className="text-[10px] font-mono font-bold text-primary mt-0.5">{task.task_id || 'N/A'}</span>
+            </div>
           </div>
           <Badge className={statusColors[task.status]}>
             {statusLabels[task.status] || task.status}

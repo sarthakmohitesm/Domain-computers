@@ -12,6 +12,7 @@ import { EditTaskDialog } from './EditTaskDialog';
 
 interface Task {
   id: string;
+  task_id: string;
   customer_name: string;
   contact_number: string;
   device_name: string;
@@ -88,6 +89,7 @@ export const TaskOverview = () => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
+      (task.task_id && task.task_id.toLowerCase().includes(q)) ||
       task.customer_name.toLowerCase().includes(q) ||
       task.device_name.toLowerCase().includes(q) ||
       task.problem_reported.toLowerCase().includes(q) ||
@@ -129,6 +131,7 @@ export const TaskOverview = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Task ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Device</TableHead>
                   <TableHead>Staff</TableHead>
@@ -149,6 +152,9 @@ export const TaskOverview = () => {
                     className={`cursor-pointer transition-all hover:bg-muted/30 ${isOverdue ? 'bg-destructive/10 hover:bg-destructive/20' : ''}`} 
                     onClick={() => navigate(`/admin/task/${task.id}`)}
                   >
+                    <TableCell className="font-mono text-xs font-bold text-primary">
+                      {task.task_id || 'N/A'}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{task.customer_name}</p>

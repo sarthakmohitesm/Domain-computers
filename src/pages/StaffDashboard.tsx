@@ -178,6 +178,7 @@ const StaffDashboard = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
+                      <span className="text-[10px] font-mono font-bold text-primary mb-0.5 block">{task.task_id || 'N/A'}</span>
                       <CardTitle className="text-lg">{task.customer_name}</CardTitle>
                       <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1">
