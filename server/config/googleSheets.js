@@ -1,10 +1,4 @@
 import { google } from 'googleapis';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let authClient = null;
 let sheetsClient = null;
@@ -12,24 +6,23 @@ let driveClient = null;
 
 /**
  * Initialize Google API auth client using service account credentials.
- * Looks for credentials.json in the project root directory.
+ * Reads credentials from GOOGLE_CREDENTIALS environment variable (JSON string).
  */
 const getAuthClient = async () => {
     if (authClient) return authClient;
 
     try {
-        // Look for credentials.json in the project root directory
-        const credentialsPath = process.env.GOOGLE_CREDENTIALS_PATH
-            || path.join(__dirname, '..', '..', 'credentials.json');
+        const credentialsJson = process.env.GOOGLE_CREDENTIALS;
 
-        if (!fs.existsSync(credentialsPath)) {
+        if (!credentialsJson) {
             throw new Error(
-                `Google credentials file not found at: ${credentialsPath}. ` +
-                `Please place your credentials.json in the project root directory.`
+                'GOOGLE_CREDENTIALS environment variable is not set! ' +
+                'Set it to the full JSON content of your service account credentials. ' +
+                'If on Vercel, add it in Project Settings > Environment Variables.'
             );
         }
 
-        const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+        const credentials = JSON.parse(credentialsJson);
 
         const auth = new google.auth.GoogleAuth({
             credentials,
