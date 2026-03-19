@@ -1,20 +1,22 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { connectDB } from '../server/config/db.js';
+import { connectDB, getDB } from '../server/config/db.js';
 import authRoutes from '../server/routes/auth.js';
 import taskRoutes from '../server/routes/tasks.js';
 import staffRoutes from '../server/routes/staff.js';
 import profileRoutes from '../server/routes/profiles.js';
 
-dotenv.config();
+// On Vercel, environment variables are injected automatically into process.env.
+// No need for dotenv - it would look for a .env file that doesn't exist on Vercel.
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increased limit to support base64 image uploads
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Ensure DB is connected for every request (Serverless Guard)
@@ -23,10 +25,11 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
-    res.status(500).json({ 
-      error: 'Database connection failed', 
+    console.error('DB middleware error:', err.message);
+    res.status(500).json({
+      error: 'Database connection failed',
       details: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      mongodbUriExists: !!process.env.MONGODB_URI,
     });
   }
 });
@@ -37,37 +40,41 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/profiles', profileRoutes);
 
-// Health check
+// Health check with detailed debug info
 app.get('/api/health', async (req, res) => {
   try {
     await connectDB();
-    res.json({ status: 'OK', message: 'Server and Database are connected' });
+    const db = getDB();
+    await db.command({ ping: 1 });
+    res.json({
+      status: 'OK',
+      message: 'Server and Database are connected',
+      timestamp: new Date().toISOString(),
+    });
   } catch (err) {
-    res.status(500).json({ 
-      status: 'Error', 
-      message: 'Database connection failed', 
+    console.error('Health check failed:', err.message);
+    res.status(500).json({
+      status: 'Error',
+      message: 'Database connection failed',
       details: err.message,
-      env_uri_exists: !!process.env.MONGODB_URI
+      env_uri_exists: !!process.env.MONGODB_URI,
+      env_uri_prefix: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 25) + '...' : 'NOT SET',
+      env_jwt_exists: !!process.env.JWT_SECRET,
+      vercel: !!process.env.VERCEL,
     });
   }
 });
 
-// Connect to MongoDB and start server
-const startServer = async () => {
-  try {
-    await connectDB();
-    
-    if (!process.env.VERCEL) {
-      app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-      });
-    }
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    if (!process.env.VERCEL) process.exit(1);
-  }
-};
-
-startServer();
+// Debug endpoint - shows which env vars exist (remove after debugging)
+app.get('/api/debug-env', (req, res) => {
+  res.json({
+    MONGODB_URI_exists: !!process.env.MONGODB_URI,
+    MONGODB_URI_prefix: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 25) + '...' : 'NOT SET',
+    JWT_SECRET_exists: !!process.env.JWT_SECRET,
+    PORT: process.env.PORT || 'not set',
+    NODE_ENV: process.env.NODE_ENV || 'not set',
+    VERCEL: process.env.VERCEL || 'not set',
+  });
+});
 
 export default app;
