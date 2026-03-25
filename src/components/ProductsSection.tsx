@@ -40,7 +40,7 @@ export const ProductsSection = () => {
               ))}
             </div>
 
-            <Button variant="glow" size="lg">
+            <Button variant="glow" size="lg" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>
               Browse All Products
             </Button>
           </div>

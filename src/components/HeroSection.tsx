@@ -41,12 +41,9 @@ export const HeroSection = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <Button variant="glow" size="xl">
+            <Button variant="glow" size="xl" onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>
               Explore Services
               <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-            <Button variant="outline" size="xl">
-              Book a Repair
             </Button>
           </div>
 

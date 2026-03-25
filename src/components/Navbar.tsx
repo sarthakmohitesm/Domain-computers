@@ -7,7 +7,6 @@ import { ThemeToggle } from './ThemeToggle';
 const navLinks = [
   { name: 'Services', href: '#services' },
   { name: 'Products', href: '#products' },
-  { name: 'About', href: '#about' },
   { name: 'Contact', href: '#contact' },
 ];
 
@@ -42,6 +41,10 @@ export const Navbar = () => {
                 key={link.name}
                 href={link.href}
                 className="text-muted-foreground hover:text-primary transition-colors duration-300 font-medium text-sm tracking-wide relative group"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
                 {link.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
@@ -79,7 +82,11 @@ export const Navbar = () => {
                   key={link.name}
                   href={link.href}
                   className="text-muted-foreground hover:text-primary transition-colors duration-300 font-medium py-2"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(false);
+                    document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   {link.name}
                 </a>
