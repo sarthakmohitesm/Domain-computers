@@ -1,13 +1,14 @@
-import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
+import { MapPin, Phone, Mail, Send, User, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 const contactInfo = [
-  { icon: MapPin, label: 'Address', value: '123 Tech Street, Digital City, DC 12345' },
-  { icon: Phone, label: 'Phone', value: '+1 (555) 123-4567' },
-  { icon: Mail, label: 'Email', value: 'support@domaincomputers.com' },
-  { icon: Clock, label: 'Hours', value: 'Mon-Sat: 9AM - 8PM' },
+  { icon: User, label: 'Owner', value: 'ULKESH PEDNEKAR\nMicrosoft Certified Professional' },
+  { icon: Phone, label: 'Phone', value: 'Office: 9130437900\nMob: 7387500555' },
+  { icon: Mail, label: 'Email', value: 'domaincomps@gmail.com' },
+  { icon: Clock, label: 'Shop Timings', value: '10:00 AM to 8:00 PM' },
+  { icon: MapPin, label: 'Address', value: 'Shop No.5/6, Sunrise Apt.,\nStation Road, Karjat (W)\n410201' },
 ];
 
 export const ContactSection = () => {
@@ -58,7 +59,7 @@ export const ContactSection = () => {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">{info.label}</div>
-                  <div className="text-foreground font-medium">{info.value}</div>
+                  <div className="text-foreground font-medium whitespace-pre-wrap">{info.value}</div>
                 </div>
               </div>
             ))}
