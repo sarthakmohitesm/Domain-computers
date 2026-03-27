@@ -4,11 +4,13 @@ import { tasksAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Phone, Laptop, Clock, Edit } from 'lucide-react';
+import { Trash2, Phone, Laptop, Clock, Edit, UserPlus, GripVertical } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { EditTaskDialog } from './EditTaskDialog';
+import { AssignTaskDialog } from './AssignTaskDialog';
 
 interface Task {
   id: string;
@@ -22,7 +24,7 @@ interface Task {
   assigned_to: string | null;
 }
 
-const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () => void; onEdit: () => void }) => {
+const DraggableTask = ({ task, onDelete, onEdit, onAssign }: { task: Task; onDelete: () => void; onEdit: () => void; onAssign: () => void }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { task },
@@ -37,20 +39,52 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
     <div
       ref={setNodeRef}
       style={style}
-      className="p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/50 transition-colors"
+      className={`p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/50 transition-all group ${
+        isDragging ? 'shadow-lg shadow-primary/20 ring-2 ring-primary/30' : ''
+      }`}
     >
       <div className="flex items-start justify-between mb-2">
-        <div className="flex flex-col cursor-grab active:cursor-grabbing" {...listeners} {...attributes}>
-          <span className="text-[10px] font-mono font-bold text-primary mb-0.5">{task.task_id || 'N/A'}</span>
-          <h4 className="font-medium">
-            {task.customer_name}
-          </h4>
+        <div className="flex items-start gap-2 flex-1 min-w-0">
+          {/* Drag Handle */}
+          <div
+            className="cursor-grab active:cursor-grabbing mt-1 p-0.5 rounded hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground"
+            {...listeners}
+            {...attributes}
+            title="Drag to assign"
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-mono font-bold text-primary mb-0.5 block">{task.task_id || 'N/A'}</span>
+            <h4 className="font-medium truncate">
+              {task.customer_name}
+            </h4>
+          </div>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 flex-shrink-0">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onAssign}
+                  id={`assign-btn-${task.id}`}
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Click to assign</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onEdit}
           >
@@ -59,7 +93,7 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onDelete}
           >
@@ -67,11 +101,7 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
           </Button>
         </div>
       </div>
-      <div
-        className="cursor-grab active:cursor-grabbing"
-        {...listeners}
-        {...attributes}
-      >
+      <div className="pl-6">
         <div className="space-y-1 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Phone className="w-3 h-3" />
@@ -87,9 +117,14 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
           </div>
         </div>
         <p className="text-sm mt-2 line-clamp-2">{task.problem_reported}</p>
-        <Badge variant="secondary" className="mt-2">
-          Unassigned
-        </Badge>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge variant="secondary">
+            Unassigned
+          </Badge>
+          <span className="text-[10px] text-muted-foreground hidden group-hover:inline-flex items-center gap-1 animate-in fade-in slide-in-from-left-2 duration-200">
+            <GripVertical className="w-3 h-3" /> Drag or click <UserPlus className="w-3 h-3" /> to assign
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -98,6 +133,8 @@ const DraggableTask = ({ task, onDelete, onEdit }: { task: Task; onDelete: () =>
 export const TaskBucket = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [assigningTask, setAssigningTask] = useState<Task | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -126,15 +163,25 @@ export const TaskBucket = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleAssign = (task: Task) => {
+    setAssigningTask(task);
+    setIsAssignDialogOpen(true);
+  };
+
   return (
     <Card className="glass border-border/50 h-full">
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center justify-between">
-          Task Bucket
-          {tasks && tasks.length > 0 && (
-            <Badge variant="outline">{tasks.length}</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            Task Bucket
+            {tasks && tasks.length > 0 && (
+              <Badge variant="outline">{tasks.length}</Badge>
+            )}
+          </div>
         </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Drag tasks to staff cards or click <UserPlus className="w-3 h-3 inline" /> to assign
+        </p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -151,6 +198,7 @@ export const TaskBucket = () => {
                 task={task}
                 onDelete={() => deleteTaskMutation.mutate(task.id)}
                 onEdit={() => handleEdit(task)}
+                onAssign={() => handleAssign(task)}
               />
             ))}
           </div>
@@ -161,6 +209,12 @@ export const TaskBucket = () => {
         task={editingTask}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+      />
+
+      <AssignTaskDialog
+        task={assigningTask}
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
       />
     </Card>
   );
