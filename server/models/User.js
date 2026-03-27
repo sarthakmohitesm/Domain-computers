@@ -49,4 +49,11 @@ export class User {
     );
     return result;
   }
+
+  static async delete(id) {
+    const db = getDB();
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+    const result = await db.collection('users').deleteOne({ _id: objectId });
+    return result;
+  }
 }

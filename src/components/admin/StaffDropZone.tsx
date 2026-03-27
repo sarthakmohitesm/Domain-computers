@@ -44,7 +44,7 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-2.5 rounded-lg bg-card/50 border border-border/30 text-sm transition-all group/task hover:border-primary/50 ${
+      className={`p-2.5 rounded-lg bg-card/50 border border-border/30 text-sm transition-all group/task hover:border-primary/50 w-full ${
         isDragging ? 'shadow-lg shadow-primary/20 ring-2 ring-primary/30' : ''
       }`}
     >
@@ -59,9 +59,9 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
           <GripVertical className="w-3.5 h-3.5" />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{task.customer_name}</p>
-          <p className="text-muted-foreground text-xs truncate">{task.device_name}</p>
+        <div className="flex-1 min-w-0 py-0.5">
+          <p className="font-medium text-sm break-words leading-tight">{task.customer_name}</p>
+          <p className="text-muted-foreground text-[11px] truncate mt-0.5">{task.device_name}</p>
         </div>
 
         {/* Action Buttons */}
@@ -147,7 +147,7 @@ const StaffCard = ({ staff, tasks, onReassign, onUnassign }: {
       )}
 
       {assignedTasks.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 scrollbar-thin">
           {assignedTasks.map((task) => (
             <DraggableAssignedTask
               key={task.id}

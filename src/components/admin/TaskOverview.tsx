@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit, Clock } from 'lucide-react';
 import { EditTaskDialog } from './EditTaskDialog';
+import { TaskDetailsDialog } from './TaskDetailsDialog';
 
 interface Task {
   id: string;
@@ -56,6 +57,8 @@ export const TaskOverview = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const { data: tasks, isLoading: loadingTasks } = useQuery({
     queryKey: ['tasks', 'all'],
@@ -103,6 +106,11 @@ export const TaskOverview = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleView = (task: Task) => {
+    setViewingTask(task);
+    setIsViewDialogOpen(true);
+  };
+
   return (
     <Card className="glass border-border/50">
       <CardHeader>
@@ -127,7 +135,7 @@ export const TaskOverview = () => {
             {searchQuery ? 'No tasks match your search.' : 'No active tasks at the moment.'}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -150,7 +158,7 @@ export const TaskOverview = () => {
                   <TableRow 
                     key={task.id} 
                     className={`cursor-pointer transition-all hover:bg-muted/30 ${isOverdue ? 'bg-destructive/10 hover:bg-destructive/20' : ''}`} 
-                    onClick={() => navigate(`/admin/task/${task.id}`)}
+                    onClick={() => handleView(task)}
                   >
                     <TableCell className="font-mono text-xs font-bold text-primary">
                       {task.task_id || 'N/A'}
@@ -225,7 +233,7 @@ export const TaskOverview = () => {
                           className="gap-1"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/admin/task/${task.id}`);
+                            handleView(task);
                           }}
                         >
                           <FileText className="w-3 h-3" />
@@ -244,6 +252,13 @@ export const TaskOverview = () => {
           task={editingTask}
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
+        />
+
+        <TaskDetailsDialog
+          task={viewingTask}
+          open={isViewDialogOpen}
+          onOpenChange={setIsViewDialogOpen}
+          staffName={getStaffName(viewingTask?.assigned_to || null)}
         />
       </CardContent>
     </Card>

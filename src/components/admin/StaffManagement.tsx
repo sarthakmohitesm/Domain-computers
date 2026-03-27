@@ -73,13 +73,17 @@ export const StaffManagement = () => {
 
   const deleteStaffMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await staffAPI.delete(userId);
+      return await staffAPI.delete(userId);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      const unassignedCount = data?.unassigned_tasks || 0;
       toast({
         title: 'Staff Removed',
-        description: 'Staff member has been removed.',
+        description: unassignedCount > 0
+          ? `Staff member removed. ${unassignedCount} task${unassignedCount !== 1 ? 's' : ''} moved back to the bucket.`
+          : 'Staff member has been removed.',
       });
     },
   });

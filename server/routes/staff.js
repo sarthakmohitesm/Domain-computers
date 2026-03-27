@@ -2,6 +2,7 @@ import express from 'express';
 import { User } from '../models/User.js';
 import { Profile } from '../models/Profile.js';
 import { UserRole } from '../models/UserRole.js';
+import { Task } from '../models/Task.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -94,10 +95,25 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
   try {
     const { id } = req.params;
 
+    // Unassign all tasks assigned to this staff member (move back to bucket)
+    const assignedTasks = await Task.findByAssignedTo(id);
+    let unassignedCount = 0;
+    for (const task of assignedTasks) {
+      await Task.update(task.id, { assigned_to: null, status: 'not_started' });
+      unassignedCount++;
+    }
+
     // Delete user role
     await UserRole.deleteByUserId(id);
 
-    res.json({ message: 'Staff member removed successfully' });
+    // Delete profile and user data completely from the database
+    await Profile.delete(id);
+    await User.delete(id);
+
+    res.json({ 
+      message: 'Staff member completely removed from the database',
+      unassigned_tasks: unassignedCount,
+    });
   } catch (error) {
     console.error('Delete staff error:', error);
     res.status(500).json({ error: error.message });

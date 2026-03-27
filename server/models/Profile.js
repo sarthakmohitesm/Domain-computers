@@ -54,5 +54,11 @@ export class Profile {
     const db = getDB();
     return await db.collection('profiles').find({}).toArray();
   }
+
+  static async delete(id) {
+    const db = getDB();
+    const result = await db.collection('profiles').deleteOne({ id });
+    return result;
+  }
 }
 
