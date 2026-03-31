@@ -222,7 +222,7 @@ export const TaskOverview = () => {
                     </TableCell>
                     <TableCell>
                       {task.deadline ? (
-                        <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md w-fit ${
+                        <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md w-fit whitespace-nowrap ${
                           isOverdue ? 'bg-destructive text-destructive-foreground' : 'bg-primary/10 text-primary'
                         }`}>
                           <Clock className="w-3 h-3" />

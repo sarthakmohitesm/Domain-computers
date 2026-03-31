@@ -81,10 +81,10 @@ const AdminDashboard = () => {
         <Tabs defaultValue="tasks" className="space-y-6">
           <TabsList className="glass flex-wrap">
             <TabsTrigger value="tasks" className="gap-2"><ClipboardList className="w-4 h-4" />Tasks</TabsTrigger>
+            <TabsTrigger value="overview" className="gap-2"><Table2 className="w-4 h-4" />Overview</TabsTrigger>
             <TabsTrigger value="staff" className="gap-2"><Users className="w-4 h-4" />Staff</TabsTrigger>
             <TabsTrigger value="review" className="gap-2"><CheckSquare className="w-4 h-4" />Review</TabsTrigger>
             <TabsTrigger value="approved" className="gap-2"><Award className="w-4 h-4" />Completed</TabsTrigger>
-            <TabsTrigger value="overview" className="gap-2"><Table2 className="w-4 h-4" />Overview</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" />Analytics</TabsTrigger>
           </TabsList>
 
