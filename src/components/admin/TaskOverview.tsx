@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksAPI, profilesAPI } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit, Clock } from 'lucide-react';
+import { User, Phone, Laptop, MessageSquare, FileText, Search, Edit, Clock, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { EditTaskDialog } from './EditTaskDialog';
 import { TaskDetailsDialog } from './TaskDetailsDialog';
 
@@ -59,6 +60,29 @@ export const TaskOverview = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      await tasksAPI.delete(taskId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast({
+        title: 'Task Deleted',
+        description: 'The task has been permanently deleted.',
+        variant: 'default',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error Deleting Task',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
 
   const { data: tasks, isLoading: loadingTasks } = useQuery({
     queryKey: ['tasks', 'all'],
@@ -109,6 +133,13 @@ export const TaskOverview = () => {
   const handleView = (task: Task) => {
     setViewingTask(task);
     setIsViewDialogOpen(true);
+  };
+
+  const handleDelete = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete task ${task.task_id || task.id}? This action cannot be undone.`)) {
+      deleteTaskMutation.mutate(task.id);
+    }
   };
 
   return (
@@ -238,6 +269,15 @@ export const TaskOverview = () => {
                         >
                           <FileText className="w-3 h-3" />
                           View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => handleDelete(task, e)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>

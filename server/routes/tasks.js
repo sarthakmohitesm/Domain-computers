@@ -212,11 +212,7 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
         updated_at: task.updated_at,
       });
     } catch (sheetError) {
-      console.error('Google Sheets archive failed:', sheetError.message);
-      return res.status(500).json({
-        error: 'Failed to archive task to Google Sheet. Task was NOT deleted.',
-        details: sheetError.message,
-      });
+      console.warn('Google Sheets archive failed, but deleting task anyway:', sheetError.message);
     }
 
     // Delete from database after successful archiving

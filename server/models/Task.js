@@ -91,10 +91,17 @@ export class Task {
   static async addComment(id, comment) {
     const db = getDB();
     const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+    
+    // Ensure comment has a timestamp
+    const commentWithDate = {
+      ...comment,
+      created_at: new Date()
+    };
+    
     const result = await db.collection('tasks').updateOne(
       { _id: objectId },
       { 
-        $push: { comments: { ...comment, timestamp: new Date() } },
+        $push: { comments: commentWithDate },
         $set: { updated_at: new Date() }
       }
     );
