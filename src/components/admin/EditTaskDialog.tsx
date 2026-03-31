@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Flag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ interface Task {
   status: string;
   assigned_to?: string | null;
   deadline?: string;
+  priority?: string;
 }
 
 interface EditTaskDialogProps {
@@ -39,6 +40,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
   const [accessoriesReceived, setAccessoriesReceived] = useState('');
   const [problemReported, setProblemReported] = useState('');
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -50,6 +52,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
       setAccessoriesReceived(task.accessories_received || '');
       setProblemReported(task.problem_reported);
       setDeadline(task.deadline ? new Date(task.deadline) : undefined);
+      setPriority((task.priority as 'high' | 'medium' | 'low') || 'medium');
     }
   }, [task]);
 
@@ -63,6 +66,7 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
         accessories_received: accessoriesReceived,
         problem_reported: problemReported,
         deadline: deadline ? deadline.toISOString() : undefined,
+        priority,
       });
     },
     onSuccess: () => {
@@ -177,6 +181,32 @@ export const EditTaskDialog = ({ task, open, onOpenChange }: EditTaskDialogProps
               placeholder="Describe the issue..."
               className="bg-background/50 min-h-[100px]"
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Flag className="w-3.5 h-3.5" />
+              Priority
+            </Label>
+            <div className="flex gap-2">
+              {([
+                { value: 'high', label: '🟠 High', active: 'bg-orange-500/20 text-orange-500 border-orange-500/50' },
+                { value: 'medium', label: '🟡 Medium', active: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' },
+                { value: 'low', label: '🟢 Low', active: 'bg-green-500/20 text-green-500 border-green-500/50' },
+              ] as const).map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPriority(p.value)}
+                  className={`flex-1 py-1.5 px-2 text-sm rounded-md border transition-all font-medium ${
+                    priority === p.value
+                      ? p.active
+                      : 'bg-background/50 border-border/50 text-muted-foreground hover:border-border'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2 flex flex-col">
             <Label htmlFor="edit-deadline">Task Deadline (Date) - Optional</Label>

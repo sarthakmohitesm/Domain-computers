@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Package, CalendarIcon } from 'lucide-react';
+import { Plus, Package, CalendarIcon, Flag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ export const TaskCreation = () => {
   const [accessoriesReceived, setAccessoriesReceived] = useState('');
   const [problemReported, setProblemReported] = useState('');
   const [deadline, setDeadline] = useState<Date>();
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -34,6 +35,7 @@ export const TaskCreation = () => {
         accessories_received: accessoriesReceived,
         problem_reported: problemReported,
         deadline: deadline ? deadline.toISOString() : undefined,
+        priority,
       });
     },
     onSuccess: () => {
@@ -44,6 +46,7 @@ export const TaskCreation = () => {
       setAccessoriesReceived('');
       setProblemReported('');
       setDeadline(undefined);
+      setPriority('medium');
       toast({
         title: 'Task Created',
         description: 'New repair task has been added to the bucket.',
@@ -130,6 +133,32 @@ export const TaskCreation = () => {
               placeholder="Describe the issue in detail..."
               className="bg-background/50 min-h-[100px]"
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <Flag className="w-3.5 h-3.5" />
+              Priority
+            </Label>
+            <div className="flex gap-2">
+              {([
+                { value: 'high', label: '🟠 High', active: 'bg-orange-500/20 text-orange-500 border-orange-500/50' },
+                { value: 'medium', label: '🟡 Medium', active: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' },
+                { value: 'low', label: '🟢 Low', active: 'bg-green-500/20 text-green-500 border-green-500/50' },
+              ] as const).map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPriority(p.value)}
+                  className={`flex-1 py-1.5 px-2 text-sm rounded-md border transition-all font-medium ${
+                    priority === p.value
+                      ? p.active
+                      : 'bg-background/50 border-border/50 text-muted-foreground hover:border-border'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2 flex flex-col">
             <Label htmlFor="deadline">Task Deadline (Date) - Optional</Label>

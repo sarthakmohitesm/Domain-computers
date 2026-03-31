@@ -22,6 +22,7 @@ interface Task {
   status: string;
   created_at: string;
   assigned_to: string | null;
+  priority?: string;
 }
 
 const DraggableTask = ({ task, onDelete, onEdit, onAssign }: { task: Task; onDelete: () => void; onEdit: () => void; onAssign: () => void }) => {
@@ -118,6 +119,17 @@ const DraggableTask = ({ task, onDelete, onEdit, onAssign }: { task: Task; onDel
         </div>
         <p className="text-sm mt-2 line-clamp-2">{task.problem_reported}</p>
         <div className="flex items-center gap-2 mt-2">
+          {task.priority && (
+            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+              task.priority === 'high'
+                ? 'bg-orange-500/20 text-orange-500 border-orange-500/30'
+                : task.priority === 'low'
+                ? 'bg-green-500/20 text-green-500 border-green-500/30'
+                : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+            }`}>
+              {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'}
+            </span>
+          )}
           <Badge variant="secondary">
             Unassigned
           </Badge>

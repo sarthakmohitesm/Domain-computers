@@ -118,6 +118,7 @@ export const tasksAPI = {
     accessories_received?: string;
     problem_reported: string;
     deadline?: string;
+    priority?: string;
   }) => {
     return apiRequest('/tasks', {
       method: 'POST',

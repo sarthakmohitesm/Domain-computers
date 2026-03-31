@@ -74,11 +74,28 @@ const StaffDashboard = () => {
     navigate('/auth');
   };
 
-  // Filter tasks
-  const filteredTasks = tasks?.filter((task: any) => {
+  // Filter and sort tasks
+  const filteredTasks = (tasks?.filter((task: any) => {
     if (statusFilter === 'all') return true;
     return task.status === statusFilter;
-  }) || [];
+  }) || []).sort((a: any, b: any) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const pA = priorityOrder[(a.priority as keyof typeof priorityOrder) || 'medium'] ?? 1;
+    const pB = priorityOrder[(b.priority as keyof typeof priorityOrder) || 'medium'] ?? 1;
+    
+    // Sort by priority first
+    if (pA !== pB) return pA - pB;
+    
+    // If priority is same, sort by deadline (closest first)
+    if (a.deadline && b.deadline) {
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    }
+    if (a.deadline) return -1;
+    if (b.deadline) return 1;
+    
+    // Fallback to creation date (newest first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   // Task stats
   const taskStats = {
@@ -190,9 +207,20 @@ const StaffDashboard = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      <Badge className={statusColors[task.status]}>
-                        {statusLabels[task.status] || task.status.replace('_', ' ')}
-                      </Badge>
+                      <div className="flex gap-2 items-center">
+                        {task.priority && (
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                            task.priority === 'high' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
+                            task.priority === 'low' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                            'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+                          }`}>
+                            {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'}
+                          </span>
+                        )}
+                        <Badge className={statusColors[task.status]}>
+                          {statusLabels[task.status] || task.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
                       {task.created_at && (
                         <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">
                           <Calendar className="w-3 h-3" />

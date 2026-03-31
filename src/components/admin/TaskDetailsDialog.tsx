@@ -18,6 +18,7 @@ interface Task {
   assigned_to: string | null;
   deadline?: string;
   created_at: string;
+  priority?: string;
 }
 
 interface TaskDetailsDialogProps {
@@ -64,9 +65,20 @@ export const TaskDetailsDialog = ({ task, open, onOpenChange, staffName }: TaskD
               <span className="text-sm font-mono font-bold text-primary">{task.task_id || 'N/A'}</span>
               <span>{task.customer_name}</span>
             </DialogTitle>
-            <Badge className={statusColors[task.status] || ''}>
-              {statusLabels[task.status] || task.status.replace('_', ' ')}
-            </Badge>
+            <div className="flex flex-col items-end gap-2">
+              <Badge className={statusColors[task.status] || ''}>
+                {statusLabels[task.status] || task.status.replace('_', ' ')}
+              </Badge>
+              {task.priority && (
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                  task.priority === 'high' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
+                  task.priority === 'low' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                  'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+                }`}>
+                  {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'} Priority
+                </span>
+              )}
+            </div>
           </div>
           <DialogDescription className="text-xs">
             Created on {format(new Date(task.created_at), 'PPP')}

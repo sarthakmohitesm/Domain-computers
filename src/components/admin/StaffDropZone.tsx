@@ -32,6 +32,7 @@ interface Task {
   deadline?: string;
   created_at?: string;
   assigned_to: string | null;
+  priority?: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -137,6 +138,17 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
           <Badge variant="outline" className="mt-1.5 text-xs">
             {task.status.replace('_', ' ')}
           </Badge>
+          {task.priority && (
+            <span className={`mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border block w-fit ${
+              task.priority === 'high'
+                ? 'bg-orange-500/20 text-orange-500 border-orange-500/30'
+                : task.priority === 'low'
+                ? 'bg-green-500/20 text-green-500 border-green-500/30'
+                : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+            }`}>
+              {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'}
+            </span>
+          )}
         </div>
       </HoverCardTrigger>
       <HoverCardContent side="right" align="start" className="w-80 p-0 overflow-hidden">
@@ -149,9 +161,22 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
               </Badge>
             )}
           </div>
-          <Badge className={`mt-1.5 text-[11px] ${statusColors[task.status] || ''}`}>
-            {statusLabels[task.status] || task.status.replace('_', ' ')}
-          </Badge>
+          <div className="flex items-center gap-2 mt-1.5">
+            <Badge className={`text-[11px] ${statusColors[task.status] || ''}`}>
+              {statusLabels[task.status] || task.status.replace('_', ' ')}
+            </Badge>
+            {task.priority && (
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                task.priority === 'high'
+                  ? 'bg-orange-500/20 text-orange-500 border-orange-500/30'
+                  : task.priority === 'low'
+                  ? 'bg-green-500/20 text-green-500 border-green-500/30'
+                  : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+              }`}>
+                {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'}
+              </span>
+            )}
+          </div>
         </div>
         <div className="px-4 py-3 space-y-2.5 text-sm">
           {task.contact_number && (

@@ -25,6 +25,7 @@ interface Task {
   assigned_to: string | null;
   deadline?: string;
   created_at: string;
+  priority?: string;
 }
 
 interface Profile {
@@ -175,6 +176,7 @@ export const TaskOverview = () => {
                   <TableHead>Device</TableHead>
                   <TableHead>Staff</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Priority</TableHead>
                   <TableHead>Deadline</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead>Actions</TableHead>
@@ -219,6 +221,17 @@ export const TaskOverview = () => {
                       <Badge className={statusColors[task.status] || ''}>
                         {statusLabels[task.status] || task.status.replace('_', ' ')}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {task.priority && (
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                          task.priority === 'high' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
+                          task.priority === 'low' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                          'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+                        }`}>
+                          {task.priority === 'high' ? '🟠 High' : task.priority === 'low' ? '🟢 Low' : '🟡 Medium'}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {task.deadline ? (
