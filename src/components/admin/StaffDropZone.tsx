@@ -60,8 +60,8 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
         </div>
 
         <div className="flex-1 min-w-0 py-0.5">
-          <p className="font-medium text-sm break-words leading-tight">{task.customer_name}</p>
-          <p className="text-muted-foreground text-[11px] truncate mt-0.5">{task.device_name}</p>
+          <p className="font-medium text-sm truncate leading-tight" title={task.customer_name}>{task.customer_name}</p>
+          <p className="text-muted-foreground text-[11px] truncate mt-0.5" title={task.device_name}>{task.device_name}</p>
         </div>
 
         {/* Action Buttons */}
@@ -133,8 +133,8 @@ const StaffCard = ({ staff, tasks, onReassign, onUnassign }: {
           : 'border-border/50 bg-background/50 hover:border-border'
       } ${staff.status === 'disabled' ? 'opacity-50' : ''}`}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <p className="font-medium text-base">{staff.full_name || staff.email || 'Unnamed'}</p>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="font-medium text-base truncate" title={staff.full_name || staff.email || 'Unnamed'}>{staff.full_name || staff.email || 'Unnamed'}</p>
         {assignedTasks.length > 0 && (
           <Badge variant="outline" className="text-xs">{assignedTasks.length} task{assignedTasks.length !== 1 ? 's' : ''}</Badge>
         )}
@@ -239,7 +239,7 @@ export const StaffDropZone = () => {
               No staff members. Add staff members first.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
               {staffMembers.map((staff) => (
                 <StaffCard
                   key={staff.id}
