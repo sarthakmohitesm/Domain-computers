@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useToast } from '@/hooks/use-toast';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { UserPlus, GripVertical, Undo2 } from 'lucide-react';
+import { UserPlus, GripVertical, Undo2, Phone, Laptop, Clock, Package, AlertCircle, MessageSquare, Hash } from 'lucide-react';
 import { AssignTaskDialog } from './AssignTaskDialog';
 
 interface StaffMember {
@@ -25,9 +26,33 @@ interface Task {
   contact_number?: string;
   device_name: string;
   problem_reported?: string;
+  accessories_received?: string;
   status: string;
+  staff_notes?: string | null;
+  deadline?: string;
+  created_at?: string;
   assigned_to: string | null;
 }
+
+const statusColors: Record<string, string> = {
+  not_started: 'bg-muted text-muted-foreground',
+  working: 'bg-yellow-500/20 text-yellow-500',
+  problem_found: 'bg-orange-500/20 text-orange-500',
+  completed: 'bg-blue-500/20 text-blue-500',
+  submitted: 'bg-purple-500/20 text-purple-500',
+  approved: 'bg-green-500/20 text-green-500',
+  rejected: 'bg-destructive/20 text-destructive',
+};
+
+const statusLabels: Record<string, string> = {
+  not_started: 'Pending',
+  working: 'In Progress',
+  problem_found: 'Problem Found',
+  completed: 'Completed',
+  submitted: 'Submitted',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
 
 const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; onReassign: () => void; onUnassign: () => void }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -40,74 +65,152 @@ const DraggableAssignedTask = ({ task, onReassign, onUnassign }: { task: Task; o
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const deadlineDate = task.deadline ? new Date(task.deadline) : null;
+  const isOverdue = deadlineDate && deadlineDate < new Date() && !['completed', 'submitted', 'approved'].includes(task.status);
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`p-2.5 rounded-lg bg-card/50 border border-border/30 text-sm transition-all group/task hover:border-primary/50 w-full ${
-        isDragging ? 'shadow-lg shadow-primary/20 ring-2 ring-primary/30' : ''
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        {/* Drag Handle */}
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
         <div
-          className="cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
-          {...listeners}
-          {...attributes}
-          title="Drag to reassign"
+          ref={setNodeRef}
+          style={style}
+          className={`p-2.5 rounded-lg bg-card/50 border border-border/30 text-sm transition-all group/task hover:border-primary/50 w-full ${
+            isDragging ? 'shadow-lg shadow-primary/20 ring-2 ring-primary/30' : ''
+          } ${isOverdue ? 'border-destructive/50 bg-destructive/5' : ''}`}
         >
-          <GripVertical className="w-3.5 h-3.5" />
-        </div>
+          <div className="flex items-center gap-2">
+            {/* Drag Handle */}
+            <div
+              className="cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
+              {...listeners}
+              {...attributes}
+              title="Drag to reassign"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </div>
 
-        <div className="flex-1 min-w-0 py-0.5">
-          <p className="font-medium text-sm truncate leading-tight" title={task.customer_name}>{task.customer_name}</p>
-          <p className="text-muted-foreground text-[11px] truncate mt-0.5" title={task.device_name}>{task.device_name}</p>
-        </div>
+            <div className="flex-1 min-w-0 py-0.5">
+              <p className="font-medium text-sm truncate leading-tight" title={task.customer_name}>{task.customer_name}</p>
+              <p className="text-muted-foreground text-[11px] truncate mt-0.5" title={task.device_name}>{task.device_name}</p>
+            </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-0.5 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={onReassign}
-                >
-                  <UserPlus className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Reassign task</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-orange-500 hover:bg-orange-500/10"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={onUnassign}
-                >
-                  <Undo2 className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Unassign task</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            {/* Action Buttons */}
+            <div className="flex gap-0.5 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={onReassign}
+                    >
+                      <UserPlus className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Reassign task</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-orange-500 hover:bg-orange-500/10"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={onUnassign}
+                    >
+                      <Undo2 className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Unassign task</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+          <Badge variant="outline" className="mt-1.5 text-xs">
+            {task.status.replace('_', ' ')}
+          </Badge>
         </div>
-      </div>
-      <Badge variant="outline" className="mt-1.5 text-xs">
-        {task.status.replace('_', ' ')}
-      </Badge>
-    </div>
+      </HoverCardTrigger>
+      <HoverCardContent side="right" align="start" className="w-80 p-0 overflow-hidden">
+        <div className="bg-primary/10 px-4 py-3 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <p className="font-bold text-base">{task.customer_name}</p>
+            {task.task_id && (
+              <Badge variant="outline" className="font-mono text-[10px] gap-1">
+                <Hash className="w-2.5 h-2.5" />{task.task_id}
+              </Badge>
+            )}
+          </div>
+          <Badge className={`mt-1.5 text-[11px] ${statusColors[task.status] || ''}`}>
+            {statusLabels[task.status] || task.status.replace('_', ' ')}
+          </Badge>
+        </div>
+        <div className="px-4 py-3 space-y-2.5 text-sm">
+          {task.contact_number && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-muted-foreground">Phone:</span>
+              <span className="font-medium">{task.contact_number}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Laptop className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground">Device:</span>
+            <span className="font-medium">{task.device_name}</span>
+          </div>
+          {task.problem_reported && (
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="text-muted-foreground">Problem:</span>
+                <p className="font-medium mt-0.5">{task.problem_reported}</p>
+              </div>
+            </div>
+          )}
+          {task.accessories_received && (
+            <div className="flex items-start gap-2">
+              <Package className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="text-muted-foreground">Accessories:</span>
+                <p className="font-medium mt-0.5">{task.accessories_received}</p>
+              </div>
+            </div>
+          )}
+          {task.deadline && (
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="text-muted-foreground">Deadline:</span>
+              <span className={`font-medium ${isOverdue ? 'text-destructive' : ''}`}>
+                {new Date(task.deadline).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })}
+                {isOverdue && ' (Overdue!)'}
+              </span>
+            </div>
+          )}
+          {task.staff_notes && (
+            <div className="flex items-start gap-2">
+              <MessageSquare className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="text-muted-foreground">Staff Notes:</span>
+                <p className="font-medium mt-0.5">{task.staff_notes}</p>
+              </div>
+            </div>
+          )}
+          {task.created_at && (
+            <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+              Created: {new Date(task.created_at).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
