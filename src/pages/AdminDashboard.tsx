@@ -16,7 +16,7 @@ import { TaskOverview } from '@/components/admin/TaskOverview';
 import { TaskReview } from '@/components/admin/TaskReview';
 import { ApprovedTasks } from '@/components/admin/ApprovedTasks';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
-import { Cpu, LogOut, Users, ClipboardList, CheckSquare, Award, BarChart3, Settings } from 'lucide-react';
+import { Cpu, LogOut, Users, ClipboardList, CheckSquare, Award, BarChart3, Settings, Table2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -84,6 +84,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="staff" className="gap-2"><Users className="w-4 h-4" />Staff</TabsTrigger>
             <TabsTrigger value="review" className="gap-2"><CheckSquare className="w-4 h-4" />Review</TabsTrigger>
             <TabsTrigger value="approved" className="gap-2"><Award className="w-4 h-4" />Completed</TabsTrigger>
+            <TabsTrigger value="overview" className="gap-2"><Table2 className="w-4 h-4" />Overview</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="w-4 h-4" />Analytics</TabsTrigger>
           </TabsList>
 
@@ -95,7 +96,6 @@ const AdminDashboard = () => {
                   <TaskBucket />
                   <StaffDropZone />
                 </div>
-                <TaskOverview />
               </div>
             </DndContext>
           </TabsContent>
@@ -103,6 +103,7 @@ const AdminDashboard = () => {
           <TabsContent value="staff"><StaffManagement /></TabsContent>
           <TabsContent value="review"><TaskReview /></TabsContent>
           <TabsContent value="approved"><ApprovedTasks /></TabsContent>
+          <TabsContent value="overview"><TaskOverview /></TabsContent>
           <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
         </Tabs>
       </main>
