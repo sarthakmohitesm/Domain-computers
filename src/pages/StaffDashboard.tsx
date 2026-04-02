@@ -116,7 +116,7 @@ const StaffDashboard = () => {
             ) : (
               <Cpu className="w-8 h-8 text-primary" />
             )}
-            <span className="font-display font-bold text-lg">Employee Dashboard</span>
+            <span className="font-display font-bold text-lg">Welcome, {user?.profile?.full_name || 'Employee'}</span>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
